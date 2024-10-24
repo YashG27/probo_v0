@@ -1,6 +1,6 @@
-const express = require('express');
-const app = express();
-
+import express from 'express';
+export const app = express();
+app.use(express.json())
 let INR_BALANCES = {
     user1 : {
         balance : 0,
@@ -53,7 +53,6 @@ let STOCK_BALANCES = {
 	   }
 	}
 }
-app.use(express.json())
 
 //route to create a user
 app.post('/user/create/:userId', (req, res) => {
@@ -69,7 +68,7 @@ app.post('/user/create/:userId', (req, res) => {
         ...STOCK_BALANCES,
         [userId] : {}
     }
-    res.status(201).json({
+    return res.status(201).json({
         message : `User ${userId} created`
     })
     
@@ -104,29 +103,28 @@ app.post('/symbol/create/:stockSymbol', (req, res) =>{
     //         }
     //     }
     // }
-    res.status(201).json({
+    return res.status(201).json({
         message : `Symbol ${symbol} created`
     })
-    return
 })
 
 //route to get the orderbook
 app.get('/orderbook', (req, res) => {
-     res.status(200).json({
+    return res.status(200).json({
         ORDERBOOK
     })
 })
 
 //route to get the inr balances
 app.get('/balances/inr', (req, res) => {
-     res.status(200).json({
+    return res.status(200).json({
         INR_BALANCES
     })
 })
 
 //route to get all the stock balances
 app.get('/balances/stock', (req, res) => {
-    res.status(200).json({
+    return res.status(200).json({
         STOCK_BALANCES
     })
 })
@@ -135,7 +133,7 @@ app.get('/balances/stock', (req, res) => {
 app.get('/balance/inr/:userId', (req, res) => {
     const userId = req.params.userId;
     const balance = INR_BALANCES[userId]
-    res.status(200).json({
+    return res.status(200).json({
         balance
     })
 })
@@ -144,7 +142,7 @@ app.get('/balance/inr/:userId', (req, res) => {
 app.post('/onramp/inr', (req, res) => {
    const {userId, amount} = req.body;
    INR_BALANCES[userId]["balance"] += parseInt(amount)
-   res.status(200).json({
+   return res.status(200).json({
     message : `Onramped ${userId} with amount ${amount}`
    })
 })  
@@ -152,7 +150,7 @@ app.post('/onramp/inr', (req, res) => {
 app.get('/balance/stock/:userId', (req, res) => {
     const userId = req.params.userId
     const balance = STOCK_BALANCES[userId];
-    res.status(200).json({
+    return res.status(200).json({
         balance
     })
 })
@@ -160,13 +158,13 @@ app.get('/balance/stock/:userId', (req, res) => {
 app.post('/trade/mint', (req, res) => {
     const { userId, stockSymbol, quantity} = req.body
     if(!INR_BALANCES[userId]){
-        res.status(401).json({
+        return res.status(401).json({
             message : "User not found"
         })
     }
     const eligible = INR_BALANCES[userId]["balance"] >= quantity * 1000
     if (!eligible){
-        res.json({
+        return res.json({
             message : "Insufficient balance"
         })
     }
@@ -188,7 +186,7 @@ app.post('/trade/mint', (req, res) => {
     // }
     STOCK_BALANCES[userId][stockSymbol]["yes"]["quantity"] += quantity
     STOCK_BALANCES[userId][stockSymbol]["no"]["quantity"] += quantity
-    res.status(200).json({
+    return res.status(200).json({
         messasge : `Minted ${quantity} 'yes' and 'no' tokens for user ${userId}, remaining balance is ${INR_BALANCES[userId]["balance"]} `
     })
 })
@@ -196,12 +194,12 @@ app.post('/trade/mint', (req, res) => {
 app.get('/orderbook/:stockSymbol', (req, res) => {
     const stockSymbol = req.params.stockSymbol;
     if(!ORDERBOOK[stockSymbol]){
-        res.status(401).json({
+        return res.status(401).json({
             message : "Stock doesnt exist!"
         })
     }
     const orderBook = ORDERBOOK[stockSymbol]
-    res.json({
+    return res.json({
         orderBook
     })
 })
@@ -216,13 +214,12 @@ app.post('/order/sell', (req, res) => {
     STOCK_BALANCES[userId][stockSymbol][stockType]["quantity"] >= quantity;
 
     if (!eligible){
-        res.status(400).json({
+        return res.status(400).json({
             message : "Insufficient stock balance"
         })
-        return;
     }
     if(quantity <= 0){
-        res.status(400).json({
+        return res.status(400).json({
             message : "Quantity should be > 0"
         })
     }
@@ -263,10 +260,9 @@ app.post('/order/sell', (req, res) => {
      ORDERBOOK[stockSymbol][stockType][price]["orders"][userId] += quantity
      ORDERBOOK[stockSymbol][stockType][price]["total"] += quantity
 
-    res.status(200).json({
+    return res.status(200).json({
         message : `Sell order placed for ${quantity} '${stockType}' options at price ${price}`
     });
-    return
 })
 //Function to check if orderbook for values exist if not create them
 function checkOrderbook(stockSymbol, stockType, price){
@@ -352,7 +348,7 @@ app.post('/order/buy', (req, res) => {
                 if( ORDERBOOK[stockSymbol][stockType][updatedPrice]['total'] === 0){
                     delete ORDERBOOK[stockSymbol][stockType][updatedPrice]
                 }
-                res.status(200).json({
+                return res.status(200).json({
                     message : `Buy order matched at price ${price} paise`
                 })
             }
@@ -424,4 +420,3 @@ app.post('/order/buy', (req, res) => {
 //     }
 })
 app.listen(3000)
-module.exports = app
